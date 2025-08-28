@@ -3,10 +3,28 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.schema.document import Document
 from langchain.vectorstores.chroma import Chroma
 from get_embedding import get_embedding_function
+import argparse
+import os
+import shutil
+from dotenv import load_dotenv
+
+load_dotenv()
+
+CHROMA_PATH = r"E:\Chatbot_GUB\chroma_db"
+DATA_PATH=r"E:\Chatbot_GUB\pdfs"
+
+
+
+# Reset database
+def clear_database():
+    if os.path.exists(CHROMA_PATH):
+        shutil.rmtree(CHROMA_PATH)
+
+
 
 # Loading PDFs
 def load_doc():
-    document_loader = PyPDFDirectoryLoader(r"E:\Chatbot for GUB\pdfs")
+    document_loader = PyPDFDirectoryLoader(DATA_PATH)
     return document_loader.load()
 
 
@@ -58,7 +76,7 @@ def generate_chunk_ids(chunks):
 def add_to_chroma(chunks: list[Document]):
     # Load the existing database.
     db = Chroma(
-        persist_directory=r"E:\Chatbot for GUB\chroma_db", embedding_function=get_embedding_function()
+        persist_directory=CHROMA_PATH, embedding_function=get_embedding_function()
     )
 
     # Calculate Page IDs.
@@ -83,3 +101,22 @@ def add_to_chroma(chunks: list[Document]):
     else:
         print("✅ No new documents to add")
 
+
+
+# Main function
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--reset", action="store_true", help="Reset the database.")
+    args = parser.parse_args()
+    if args.reset:
+        print("Clearing Database")
+        clear_database()
+
+    documents = load_doc()
+    chunks = split_doc(documents)
+    add_to_chroma(chunks)
+
+
+
+if __name__ == "__main__":
+    main()
